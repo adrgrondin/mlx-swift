@@ -70,7 +70,7 @@ let noMetalCmlxExcludes = [
     "mlx/mlx/backend/metal/gated_delta_update.cpp",
     "mlx/mlx/backend/metal/hadamard.cpp",
     "mlx/mlx/backend/metal/indexing.cpp",
-    "mlx/mlx/backend/metal/jit_kernels.cpp",
+    "mlx-generated/jit_kernels.cpp",
     "mlx/mlx/backend/metal/logsumexp.cpp",
     "mlx/mlx/backend/metal/matmul.cpp",
     "mlx/mlx/backend/metal/metal.cpp",
@@ -317,6 +317,9 @@ let cmlx = Target.target(
         // see PrepareMetalShaders -- don't build the kernels in place
         "mlx/mlx/backend/metal/kernels",
         "mlx/mlx/backend/metal/nojit_kernels.cpp",
+
+        // Built from mlx-generated with the maintained MLX JIT patch.
+        "mlx/mlx/backend/metal/jit_kernels.cpp",
 
         // distributed backends: enable ring, disable MPI + NCCL.  JACCL is
         // built through mlx-conditional on macOS, so its sources are excluded here.

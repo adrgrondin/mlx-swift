@@ -1054,6 +1054,7 @@
 				mlx/backend/metal/matmul.h,
 				mlx/backend/metal/metal.h,
 				mlx/backend/metal/no_metal.cpp,
+				mlx/backend/metal/jit_kernels.cpp,
 				mlx/backend/metal/nojit_kernels.cpp,
 				mlx/backend/metal/reduce.h,
 				mlx/backend/metal/resident.h,

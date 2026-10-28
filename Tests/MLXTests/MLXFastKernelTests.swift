@@ -5,6 +5,10 @@ import MLX
 import MLXNN
 import XCTest
 
+#if canImport(Metal)
+    import Metal
+#endif
+
 class MLXFastKernelTests: XCTestCase {
 
     func testCustomKernelBasic() {
@@ -109,6 +113,78 @@ class MLXFastKernelTests: XCTestCase {
         print(result.sum().item(Float.self))
         XCTAssertEqual(result.shape, [1, 32, 1, 80])
         XCTAssertEqual(result.sum().item(Float.self), 1281.9253, accuracy: 0.01)
+    }
+
+    func testFastSDPAHead256AgainstCPU() {
+        assertFullAttentionAgainstCPU(headDimension: 256, valueDimension: 256)
+    }
+
+    func testFastSDPAHead512AgainstCPU() throws {
+        #if canImport(Metal)
+            guard #available(macOS 26.2, iOS 26.2, tvOS 26.2, visionOS 26.2, *) else {
+                throw XCTSkip("D512 fused attention requires NAX support")
+            }
+            try XCTSkipUnless(
+                MTLCreateSystemDefaultDevice()?.supportsFamily(.apple10) == true,
+                "D512 fused attention requires an Apple10 GPU")
+            assertFullAttentionAgainstCPU(headDimension: 512, valueDimension: 512)
+        #else
+            throw XCTSkip("D512 fused attention requires Metal NAX")
+        #endif
+    }
+
+    func testFastSDPADifferentValueDimensionAgainstCPU() {
+        assertFullAttentionAgainstCPU(headDimension: 96, valueDimension: 64)
+    }
+
+    private func assertFullAttentionAgainstCPU(
+        headDimension: Int, valueDimension: Int,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let scale = 1 / Float(headDimension).squareRoot()
+        for dtype in [DType.float16, .bfloat16] {
+            for length in [64, 1024] {
+                for causal in [false, true] {
+                    let (q, k, v, reference) = Device.withDefaultDevice(.cpu) {
+                        let q = MLXRandom.normal(
+                            [1, 2, length, headDimension], key: MLXRandom.key(51)
+                        ).asType(dtype)
+                        let k = MLXRandom.normal(
+                            [1, 1, length, headDimension], key: MLXRandom.key(52)
+                        ).asType(dtype)
+                        let v = MLXRandom.normal(
+                            [1, 1, length, valueDimension], key: MLXRandom.key(53)
+                        ).asType(dtype)
+                        var scores =
+                            matmul(q.asType(.float32), k.asType(.float32).swappedAxes(-1, -2))
+                            * scale
+                        if causal {
+                            let mask = tril(ones([length, length])).asType(.bool)
+                            scores = which(mask, scores, -Float.infinity)
+                        }
+                        let reference = matmul(softmax(scores, axis: -1), v.asType(.float32))
+                        eval(q, k, v, reference)
+                        return (q, k, v, reference)
+                    }
+                    let result = Device.withDefaultDevice(.gpu) {
+                        MLXFast.scaledDotProductAttention(
+                            queries: q, keys: k, values: v, scale: scale,
+                            mask: causal ? .causal : .none, forceFused: true)
+                    }.asType(.float32)
+                    let difference = result - reference
+                    let error = (difference * difference).sum().sqrt().item(Float.self)
+                    let norm = (reference * reference).sum().sqrt().item(Float.self)
+                    let context =
+                        "D=\(headDimension) V=\(valueDimension) L=\(length) \(dtype) causal=\(causal)"
+                    XCTAssertEqual(result.shape, reference.shape, context, file: file, line: line)
+                    XCTAssertTrue(
+                        result.asArray(Float.self).allSatisfy { $0.isFinite }, context,
+                        file: file, line: line)
+                    XCTAssertLessThan(
+                        error / max(norm, 1e-6), 0.02, context, file: file, line: line)
+                }
+            }
+        }
     }
 
     func testRoPEOutput() {

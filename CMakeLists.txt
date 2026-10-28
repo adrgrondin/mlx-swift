@@ -46,10 +46,15 @@ set(MLX_BUILD_EXAMPLES OFF)
 set(MLX_BUILD_BENCHMARKS OFF)
 set(MLX_BUILD_PYTHON_BINDINGS OFF)
 
+set(mlx_patch
+    ${apply_patch}
+    -DPATCH=${CMAKE_CURRENT_SOURCE_DIR}/cmake/mlx-nax-split-attention.patch
+    ${apply_patch_script})
 FetchContent_Declare(
   mlx
   GIT_REPOSITORY "https://github.com/ml-explore/mlx.git"
-  GIT_TAG "v0.32.4")
+  GIT_TAG "v0.32.4"
+  PATCH_COMMAND ${mlx_patch})
 FetchContent_MakeAvailable(mlx)
 
 # mlx-c

@@ -82,6 +82,9 @@ for x in Source/Cmlx/mlx-generated/*.cpp ; do \
 done;
 rm Source/Cmlx/mlx-generated/*.tmp
 
+# Apply host-side patches without changing the MLX submodule.
+./tools/generate-patched-mlx.sh
+
 # Update the headers
 ./tools/fix-metal-includes.sh
 

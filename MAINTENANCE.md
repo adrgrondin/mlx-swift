@@ -148,6 +148,31 @@ pre-generating the source when updating the `mlx` version.
 
 8. Make a PR
 
+## Bonsai runtime patch on 0.33.0
+
+This fork is based on the upstream `0.33.0` tag. Upstream already supports
+1-bit affine quantization. The remaining patch fixes Metal NAX attention JIT
+compilation for head dimensions 256 and 512: `attention_nax_dsplit` does not
+have the `BV` template parameter used by `attention_nax`.
+
+`cmake/mlx-nax-split-attention.patch` is the source of the fix. SwiftPM and the
+Xcode project compile `Source/Cmlx/mlx-generated/jit_kernels.cpp` instead of the
+unpatched submodule file. Regenerate it with `./tools/generate-patched-mlx.sh`;
+`./tools/update-mlx.sh` also runs this step. Commit the generated file with the
+patch. CMake applies the same patch to its fetched MLX dependency. The pinned
+MLX and MLX-C submodules remain unchanged; no separate core fork is needed.
+
+The Metal kernel headers and embedded sources are unchanged because their
+template declarations are already correct. Do not edit generated files by hand.
+When updating MLX, remove the patch and build overrides once upstream fixes it.
+
+Regression coverage is in `MLXFastKernelTests`: D256/D512 causal and non-causal
+prefill are compared with FP32 CPU attention for FP16/BF16 inputs. A separate
+case checks unequal query/value dimensions in the ordinary kernel, which still
+needs `BV`. These tests exercise NAX on M5 hardware. The D512 case is skipped
+without NAX-capable hardware and OS support; other cases use the normal fused
+attention backend on older devices.
+
 ## Updating `xcode/MLX.xcodeproj`
 
 ### Updating
