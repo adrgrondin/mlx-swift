@@ -49,6 +49,10 @@ set(MLX_BUILD_PYTHON_BINDINGS OFF)
 set(mlx_patch
     ${apply_patch}
     -DPATCH=${CMAKE_CURRENT_SOURCE_DIR}/cmake/mlx-nax-split-attention.patch
+    ${apply_patch_script}
+    COMMAND
+    ${apply_patch}
+    -DPATCH=${CMAKE_CURRENT_SOURCE_DIR}/cmake/mlx-quantized-matmul-stream.patch
     ${apply_patch_script})
 FetchContent_Declare(
   mlx

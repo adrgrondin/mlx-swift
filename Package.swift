@@ -318,8 +318,9 @@ let cmlx = Target.target(
         "mlx/mlx/backend/metal/kernels",
         "mlx/mlx/backend/metal/nojit_kernels.cpp",
 
-        // Built from mlx-generated with the maintained MLX JIT patch.
+        // Built from mlx-generated with the maintained MLX patches.
         "mlx/mlx/backend/metal/jit_kernels.cpp",
+        "mlx/mlx/ops.cpp",
 
         // distributed backends: enable ring, disable MPI + NCCL.  JACCL is
         // built through mlx-conditional on macOS, so its sources are excluded here.

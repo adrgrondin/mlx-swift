@@ -1145,6 +1145,7 @@
 				mlx/linalg.h,
 				mlx/memory.h,
 				mlx/mlx.h,
+				mlx/ops.cpp,
 				mlx/ops.h,
 				mlx/primitives.h,
 				mlx/random.h,

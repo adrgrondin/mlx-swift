@@ -1,0 +1,15 @@
+diff --git a/mlx/ops.cpp b/mlx/ops.cpp
+--- a/mlx/ops.cpp
++++ b/mlx/ops.cpp
+@@ -4968,7 +4968,10 @@ array quantized_matmul(
+   std::vector<array> inputs;
+   if (qmode == QuantizationMode::Affine) {
+     inputs = {
+-        astype(x, dtype), w, astype(scales, dtype), astype(*biases, dtype)};
++        astype(x, dtype, s),
++        w,
++        astype(scales, dtype, s),
++        astype(*biases, dtype, s)};
+   } else {
+     inputs = {x, w, scales};
+   }
